@@ -1,0 +1,31 @@
+bloque;horario;harina;fermentador;incremento
+bloque1;t;trigo;azucar blanca;1.1
+bloque1;t;trigo;azucar cruda;2.3
+bloque1;t;trigo;miel;2.4
+bloque1;t;integral;azucar blanca;1.7
+bloque1;t;integral;azucar cruda;2.3
+bloque1;t;integral;miel;1.2
+bloque2;t;trigo;azucar blanca;1.7
+bloque2;t;trigo;azucar cruda;2
+bloque2;t;trigo;miel;1.9
+bloque2;t;integral;azucar blanca;1.2
+bloque2;t;integral;azucar cruda;1.1
+bloque2;t;integral;miel;1.1
+bloque3;m;trigo;azucar blanca;1.2
+bloque3;m;trigo;azucar cruda;1.6
+bloque3;m;trigo;miel;1.8
+bloque3;m;integral;azucar blanca;1.3
+bloque3;m;integral;azucar cruda;1.4
+bloque3;m;integral;miel;1.5
+bloque4;m;trigo;azucar blanca;1.7
+bloque4;m;trigo;azucar cruda;1.7
+bloque4;m;trigo;miel;1.7
+bloque4;m;integral;azucar blanca;1.9
+bloque4;m;integral;azucar cruda;1.7
+bloque4;m;integral;miel;1.3
+bloque5;t;trigo;azucar blanca;0.7
+bloque5;t;trigo;azucar cruda;0.9
+bloque5;t;trigo;miel;1
+bloque5;t;integral;azucar blanca;0.8
+bloque5;t;integral;azucar cruda;1.4
+bloque5;t;integral;miel;1.1
