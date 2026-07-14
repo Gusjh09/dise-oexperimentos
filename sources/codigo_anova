@@ -1,0 +1,454 @@
+---
+title: "codigo_anova"
+author: "gjh"
+date: "2026-06-21"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+### Codigo del proyecto
+
+##Instalacion de algunas cosas
+```{r}
+#install.packages("pwr")
+library(pwr)
+```
+
+
+##  Importacion del archivo
+
+```{r}
+library(readr)
+datos <- read_delim("datos.csv", delim=";")  #usar esta funcion para leer ;
+#conversion a factores
+datos$bloque<-factor(datos$bloque)
+datos$harina<-factor(datos$harina)
+datos$fermentador<-factor(datos$fermentador)
+```
+
+
+## Algunos analisis descriptivos
+
+medias generales
+
+```{r}
+media_general <- mean(datos$incremento)
+media_general
+
+
+media_bloque <-tapply(datos$incremento, datos$bloque, mean)
+media_bloque
+
+```
+medias por tratamiento
+
+```{r}
+aggregate(incremento ~ harina + fermentador,
+          data = datos,
+          mean)
+```
+```{r}
+library(dplyr)
+library(ggplot2)
+
+medias <- datos %>%
+  group_by(harina, fermentador) %>%
+  summarise(media = mean(incremento), .groups = "drop")
+
+ggplot(medias,
+       aes(x = fermentador,
+           y = media,
+           fill = harina)) +
+  geom_col(position = "dodge") +
+  labs(x = "Fermentador",
+       y = "Media del incremento",
+       fill = "Harina") +
+  theme_minimal()
+```
+
+
+
+
+
+coeficiente de variacion
+
+```{r}
+cv <- sd(datos$incremento) / mean(datos$incremento) * 100
+cv 
+```
+Resumen 
+
+```{r}
+summary(datos$incremento)
+```
+
+
+## Modelo lineal con interaccion 
+
+
+```{r}
+modelo1 <- lm(incremento~bloque+harina*fermentador, data = datos)
+```
+
+Se ajusta a un modelo lineal con interaccion y se lee como : variable incremento explicada por el efecto de la harina + fermentador y la interacción. 
+
+
+
+## Comprobación de los supuestos del modelo con interacción 
+
+
+```{r}
+#extraccion de los residuales 
+residuales<-modelo1$residuals
+#supuesto de normalidad
+shapiro.test(residuales)
+```
+La normalidad de los residuos se evaluo, mediante Shapiro-Wilk, con resultados W = 0.94046, p-value = 0.0936
+los cuales indican que que no se eontraron desviaciones significativas de la normalidad, por lo que se considera que el supuesto se cumple y no se rechaza la hipotesis nula. 
+
+
+```{r}
+
+qqnorm(residuals(modelo1),
+       main = "Gráfico Q-Q de los residuos")
+qqline(residuals(modelo1),
+       col = "red",
+       lwd = 2)
+
+```
+
+
+```{r}
+#supuesto de homocedasticidad 
+bartlett.test(residuals(modelo1)~interaction(datos$harina, datos$fermentador), data = datos)
+```
+NO se rechaza la hipotesis de homocedasticidad, por lo tanto, se puede asumir que las varianzas de la variable respuesta dentro de cada tratamiento son iguales. 
+
+
+## Analisis de varianza general
+```{r}
+coeficientesmodelo1 <-modelo1$coefficients
+coeficientesmodelo1
+```
+
+
+```{r}
+anova(modelo1)
+```
+## Analisis del anova
+
+
+Al hacer la prueba formal de la hiposis de no interaccion entre harina y fermentador se obtiene una probabilidad de p 0.11 mas alta que el nivel de significancia de 0,05, por lo que no se puede afirmar que haya interacion entre los dos factores, de aqui en adelante, se procede a concluir el analsis usando un modelo sin interaccion. 
+
+
+## Modelo sin interación
+
+
+```{r}
+modelo2 = lm (incremento ~ bloque+harina+fermentador, data = datos)
+```
+
+
+
+## Graficos de cajas con bloques y centrados
+
+```{r}
+boxplot(incremento ~ bloque,
+        data = datos,
+        col = "lightblue",
+        main = "Incremento por bloque",
+        xlab = "Bloque",
+        ylab = "Incremento")
+```
+
+```{r}
+media.general <- mean(datos$incremento)
+
+datos$incremento.centrado <- with(
+  datos,
+  incremento - ave(incremento, bloque, FUN = mean) + media.general
+)
+```
+
+```{r}
+boxplot(incremento.centrado ~ bloque,
+        data = datos,
+        col = "lightgreen",
+        main = "Incremento centrado por bloque",
+        xlab = "Bloque",
+        ylab = "Incremento centrado")
+```
+```{r}
+par(mfrow = c(1,2))
+
+boxplot(incremento ~ bloque,
+        data = datos,
+        col = "lightblue",
+        main = "Original")
+
+boxplot(incremento.centrado ~ bloque,
+        data = datos,
+        col = "lightgreen",
+        main = "Centrado")
+```
+
+
+
+## Comprobacion de los supuestos 
+
+```{r}
+#supuesto de normalidad
+residuales2<- modelo2$residuals
+shapiro.test(residuales2)
+```
+
+La normalidad de los residuos se evaluo, mediante Shapiro-Wilk, con resultados W = 0.97574, p-value = 0.7045
+los cuales indican que que no se econtraron desviaciones significativas de la normalidad, por lo que se considera que el supuesto se cumple y no se rechaza la hipotesis nula. 
+
+```{r}
+qqnorm(residuals(modelo2),
+       main = "Gráfico Q-Q de los residuos")
+qqline(residuals(modelo2),
+       col = "red",
+       lwd = 2)
+```
+
+
+```{r}
+#supuesto de homocedasticidad 
+bartlett.test(residuals(modelo2)~interaction(datos$harina, datos$fermentador))
+```
+NO se rechaza la hipotesis de homocedasticidad, por lo tanto, se puede asumir que las varianzas de la variable respuesta dentro de cada tratamiento son iguales.
+
+
+## Analisis de varianza del modelo sin interaccion
+
+```{r}
+coeficientesmodelo2 <- modelo2$coefficients
+coeficientesmodelo2
+```
+
+
+```{r}
+anova(modelo2)
+```
+
+Efecto de la harina
+
+El factor harina no presenta un efecto significativo sobre el incremento (F=2.069, p=0.1644>0.05). Por lo tanto, no existe evidencia estadística suficiente para afirmar que los dos tipos de harina produzcan incrementos promedio diferentes.
+
+Efecto del fermentador
+
+El factor fermentador tampoco muestra un efecto significativo (F=2.052, p=0.1523>0.05). En consecuencia, no se detectan diferencias significativas entre los fermentadores respecto al incremento promedio obtenido.
+
+
+
+## Analisis de la potencia de la prueba
+
+
+```{r}
+# Potencia post hoc para detectar diferencias entre harinas
+
+anova_modelo2 <- anova(modelo2)
+
+alpha <- 0.05
+
+SS_harina <- anova_modelo2["harina", "Sum Sq"]
+gl_harina <- anova_modelo2["harina", "Df"]
+
+SSE <- anova_modelo2["Residuals", "Sum Sq"]
+CMRes <- anova_modelo2["Residuals", "Mean Sq"]
+gl_error <- anova_modelo2["Residuals", "Df"]
+
+Fcrit <- qf(
+  1 - alpha,
+  df1 = gl_harina,
+  df2 = gl_error
+)
+
+lambda <- SS_harina / CMRes
+
+potencia_harina <- pf(
+  Fcrit,
+  df1 = gl_harina,
+  df2 = gl_error,
+  ncp = lambda,
+  lower.tail = FALSE
+)
+
+eta2_parcial_harina <- SS_harina / (SS_harina + SSE)
+
+f_cohen_harina <- sqrt(
+  eta2_parcial_harina / (1 - eta2_parcial_harina)
+)
+
+resultado_potencia_harina <- data.frame(
+  factor = "harina",
+  gl_factor = gl_harina,
+  gl_error = gl_error,
+  SS_factor = SS_harina,
+  CMRes = CMRes,
+  F_critico = Fcrit,
+  lambda = lambda,
+  eta2_parcial = eta2_parcial_harina,
+  f_cohen = f_cohen_harina,
+  potencia = potencia_harina
+)
+
+resultado_potencia_harina
+```
+
+```{r}
+# Potencia post hoc para detectar diferencias entre fermentadores
+
+anova_modelo2 <- anova(modelo2)
+
+alpha <- 0.05
+
+SS_fermentador <- anova_modelo2["fermentador", "Sum Sq"]
+gl_fermentador <- anova_modelo2["fermentador", "Df"]
+
+SSE <- anova_modelo2["Residuals", "Sum Sq"]
+CMRes <- anova_modelo2["Residuals", "Mean Sq"]
+gl_error <- anova_modelo2["Residuals", "Df"]
+
+Fcrit <- qf(
+  1 - alpha,
+  df1 = gl_fermentador,
+  df2 = gl_error
+)
+
+lambda <- SS_fermentador / CMRes
+
+potencia_fermentador <- pf(
+  Fcrit,
+  df1 = gl_fermentador,
+  df2 = gl_error,
+  ncp = lambda,
+  lower.tail = FALSE
+)
+
+eta2_parcial_fermentador <- SS_fermentador / (SS_fermentador + SSE)
+
+f_cohen_fermentador <- sqrt(
+  eta2_parcial_fermentador / (1 - eta2_parcial_fermentador)
+)
+
+resultado_potencia_fermentador <- data.frame(
+  factor = "fermentador",
+  gl_factor = gl_fermentador,
+  gl_error = gl_error,
+  SS_factor = SS_fermentador,
+  CMRes = CMRes,
+  F_critico = Fcrit,
+  lambda = lambda,
+  eta2_parcial = eta2_parcial_fermentador,
+  f_cohen = f_cohen_fermentador,
+  potencia = potencia_fermentador
+)
+
+resultado_potencia_fermentador
+```
+```{r}
+# Potencia post hoc para detectar la interacción harina × fermentador
+
+anova_modelo1 <- anova(modelo1)
+
+alpha <- 0.05
+
+SS_interaccion <- anova_modelo1["harina:fermentador", "Sum Sq"]
+gl_interaccion <- anova_modelo1["harina:fermentador", "Df"]
+
+SSE <- anova_modelo1["Residuals", "Sum Sq"]
+CMRes <- anova_modelo1["Residuals", "Mean Sq"]
+gl_error <- anova_modelo1["Residuals", "Df"]
+
+Fcrit <- qf(
+  1 - alpha,
+  df1 = gl_interaccion,
+  df2 = gl_error
+)
+
+lambda <- SS_interaccion / CMRes
+
+potencia_interaccion <- pf(
+  Fcrit,
+  df1 = gl_interaccion,
+  df2 = gl_error,
+  ncp = lambda,
+  lower.tail = FALSE
+)
+
+eta2_parcial_interaccion <- SS_interaccion /
+  (SS_interaccion + SSE)
+
+f_cohen_interaccion <- sqrt(
+  eta2_parcial_interaccion /
+    (1 - eta2_parcial_interaccion)
+)
+
+resultado_potencia_interaccion <- data.frame(
+  factor = "harina:fermentador",
+  gl_factor = gl_interaccion,
+  gl_error = gl_error,
+  SS_factor = SS_interaccion,
+  CMRes = CMRes,
+  F_critico = Fcrit,
+  lambda = lambda,
+  eta2_parcial = eta2_parcial_interaccion,
+  f_cohen = f_cohen_interaccion,
+  potencia = potencia_interaccion
+)
+
+resultado_potencia_interaccion
+```
+```{r}
+#datos de la potencia juntos 
+rbind(
+  resultado_potencia_harina,
+  resultado_potencia_fermentador,
+  resultado_potencia_interaccion
+)
+
+```
+
+ 
+ 
+ 
+## Analisis de la eficiencia del uso de bloques
+ 
+```{r}
+#Modelo con bloques
+modelo3 <- lm(incremento ~ bloque + harina * fermentador, data = datos)
+
+#Modelo sin bloques
+modelo4 <- lm(incremento ~ harina * fermentador, data = datos)
+
+#Cuadrado medio residual
+cmRESbloq <- anova(modelo3)["Residuals", "Mean Sq"]
+cmRES <- anova(modelo4)["Residuals", "Mean Sq"]
+
+#Eficiencia relativa
+ER <- cmRES / cmRESbloq
+ER_porcentaje <- ER * 100
+
+ER
+ER_porcentaje
+```
+###Fin del proyecto
+Puede limpiar su entorno ejecutando el siguiente chunk 
+
+```{r}
+rm(list = ls())
+rm(list = ls())
+gc()
+rm(list = ls())
+cat("\014")  # Limpia la consola en RStudio
+```
