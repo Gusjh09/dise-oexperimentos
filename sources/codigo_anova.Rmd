@@ -31,6 +31,8 @@ datos <- read_delim("datos.csv", delim=";")  #usar esta funcion para leer ;
 datos$bloque<-factor(datos$bloque)
 datos$harina<-factor(datos$harina)
 datos$fermentador<-factor(datos$fermentador)
+datos$horario<-factor(datos$horario)
+datos$incremento<-as.numeric(datos$incremento) #variable respuesta
 ```
 
 
@@ -40,11 +42,11 @@ medias generales
 
 ```{r}
 media_general <- mean(datos$incremento)
-media_general
+(media_general)
 
 
 media_bloque <-tapply(datos$incremento, datos$bloque, mean)
-media_bloque
+(media_bloque)
 
 ```
 medias por tratamiento
@@ -72,6 +74,12 @@ ggplot(medias,
        fill = "Harina") +
   theme_minimal()
 ```
+```{r}
+with(datos,
+     tapply(incremento,
+            list(harina, fermentador),
+            mean))
+```
 
 
 
@@ -98,6 +106,14 @@ modelo1 <- lm(incremento~bloque+harina*fermentador, data = datos)
 ```
 
 Se ajusta a un modelo lineal con interaccion y se lee como : variable incremento explicada por el efecto de la harina + fermentador y la interacción. 
+
+
+
+```{r}
+par(mfrow=c(2,2))
+plot(modelo1)
+```
+
 
 
 
